@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from typing import Dict, Any
 
-# 1. إعداد الصفحة بنفس أسلوب وهوية المعهد
+# 1. إعداد الصفحة (يجب أن يكون أول أمر Streamlit)
 st.set_page_config(
     page_title="مساعد معهد المشورة - خدمة العملاء",
     page_icon="💬",
@@ -12,14 +12,26 @@ st.set_page_config(
 
 # 2. تحميل المفاتيح ومتغيرات البيئة من Streamlit Secrets
 def load_secrets():
+    # مفاتيح النموذج الأساسية
     secret_keys = ["LLM_API", "MODEL_NAME", "GROQ_API_KEY"]
     for key in secret_keys:
+        if key in st.secrets:
+            os.environ[key] = str(st.secrets[key])
+            
+    # مفاتيح LangSmith للتتبع
+    langsmith_keys = [
+        "LANGCHAIN_TRACING_V2",
+        "LANGCHAIN_ENDPOINT",
+        "LANGCHAIN_API_KEY",
+        "LANGCHAIN_PROJECT",
+    ]
+    for key in langsmith_keys:
         if key in st.secrets:
             os.environ[key] = str(st.secrets[key])
 
 load_secrets()
 
-# 3. استيراد الـ Workflow الخفيف المصمم للمعهد
+# 3. استيراد الـ Workflow بعد تحميل متغيرات البيئة
 try:
     from workflow import app as workflow_app
 except Exception as e:
@@ -53,7 +65,7 @@ with st.sidebar:
     
     st.divider()
     
-    # زر إعادة إعادة المحادثة
+    # زر إعادة المحادثة
     if st.button("🗑️ مسح المحادثة وبدء من جديد", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
@@ -64,7 +76,7 @@ for message in st.session_state.messages:
         st.write(message["content"])
 
 # 8. منطقة إدخال السؤال من العميل
-user_query = st.chat_input(" اكتب استفسارك هنا...")
+user_query = st.chat_input("اكتب استفسارك هنا...")
 
 if user_query:
     # إضافة سؤال العميل للواجهة وللـ State
@@ -73,7 +85,6 @@ if user_query:
         st.write(user_query)
 
     # تحضير الـ chat_history بالشكل المطلوب لـ LangGraph
-    # نمرر المحادثات السابقة بدون السؤال الأخير
     formatted_history = [
         {"role": msg["role"], "content": msg["content"]} 
         for msg in st.session_state.messages[:-1]

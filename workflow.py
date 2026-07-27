@@ -1,12 +1,22 @@
-# workflow.py
-
+import os
 from langgraph.graph import StateGraph, END
 
-# 1. Import state definition from your prompt file
+# 1. Import configurations & state definition
+from config import settings
 from models import state
 
 # 2. Import agents from agents file
 from agents import rewriter_agent, response_agent
+
+
+# ==========================================
+# Enable LangSmith Tracing
+# ==========================================
+if getattr(settings, "langchain_api_key", None):
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+    os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key
+    os.environ["LANGCHAIN_PROJECT"] = getattr(settings, "langchain_project", "counseling-institute-assistant")
 
 
 # ==========================================
@@ -27,19 +37,3 @@ workflow.add_edge("generate_response", END)
 
 # Compile Graph
 app = workflow.compile()
-
-
-# ==========================================
-# Execution Example
-# ==========================================
-
-initial_input = {
-    "user_query": "ايه هي المحاور الرئيسية لكورس المراهقين؟",
-    "chat_history": []
-}
-
-# Run graph execution
-result = app.invoke(initial_input)
-
-print("\n--- Final Assistant Response ---")
-print(result.get("response"))
