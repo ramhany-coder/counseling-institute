@@ -1,8 +1,7 @@
 import os
 import streamlit as st
-from typing import Dict, Any
 
-# 1. إعداد الصفحة (يجب أن يكون أول أمر Streamlit)
+# 1. إعداد الصفحة
 st.set_page_config(
     page_title="مساعد معهد المشورة - خدمة العملاء",
     page_icon="💬",
@@ -10,28 +9,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. تحميل المفاتيح ومتغيرات البيئة من Streamlit Secrets
-def load_secrets():
-    # مفاتيح النموذج الأساسية
-    secret_keys = ["LLM_API", "MODEL_NAME", "GROQ_API_KEY"]
-    for key in secret_keys:
-        if key in st.secrets:
-            os.environ[key] = str(st.secrets[key])
-            
-    # مفاتيح LangSmith للتتبع
-    langsmith_keys = [
-        "LANGCHAIN_TRACING_V2",
-        "LANGCHAIN_ENDPOINT",
-        "LANGCHAIN_API_KEY",
-        "LANGCHAIN_PROJECT",
-    ]
-    for key in langsmith_keys:
-        if key in st.secrets:
-            os.environ[key] = str(st.secrets[key])
+# 2. تحميل كل المتغيرات مباشرة في os.environ فوراً
+def load_all_secrets():
+    # نقل كل Secrets الموجودة في Streamlit لـ os.environ بشكل عام
+    if hasattr(st, "secrets"):
+        for key, value in st.secrets.items():
+            os.environ[str(key)] = str(value)
 
-load_secrets()
+load_all_secrets()
 
-# 3. استيراد الـ Workflow بعد تحميل متغيرات البيئة
+# 3. استيراد الـ Workflow بعد التأكد من تسجيل os.environ
 try:
     from workflow import app as workflow_app
 except Exception as e:
@@ -43,7 +30,7 @@ except Exception as e:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 5. واجهة المعهد الرئيسية (الهيدر)
+# 5. واجهة المعهد الرئيسية
 st.title("🏛️ مساعد معهد المشورة الذكي")
 st.caption("أهلاً بك! أنا السكرتيرة الافتراضية لمعهد المشورة. أقدر أساعدك في الاستفسار عن الكورسات، الدبلومة، والمحتوى المتاح.")
 
@@ -65,51 +52,39 @@ with st.sidebar:
     
     st.divider()
     
-    # زر إعادة المحادثة
     if st.button("🗑️ مسح المحادثة وبدء من جديد", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# 7. عرض تاريخ المحادثة في الواجهة
+# 7. عرض تاريخ المحادثة
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
-# 8. منطقة إدخال السؤال من العميل
+# 8. منطقة الإدخال والتشغيل
 user_query = st.chat_input("اكتب استفسارك هنا...")
 
 if user_query:
-    # إضافة سؤال العميل للواجهة وللـ State
     st.session_state.messages.append({"role": "user", "content": user_query})
     with st.chat_message("user"):
         st.write(user_query)
 
-    # تحضير الـ chat_history بالشكل المطلوب لـ LangGraph
     formatted_history = [
         {"role": msg["role"], "content": msg["content"]} 
         for msg in st.session_state.messages[:-1]
     ]
 
-    # بناء المدخلات الموجهة لـ workflow.py
     initial_input = {
         "user_query": user_query,
         "chat_history": formatted_history
     }
 
-    # تشغيل الـ Workflow والحصول على الرد
     with st.chat_message("assistant"):
         with st.spinner("جاري مراجعة معلومات المعهد والرد عليك..."):
             try:
-                # استدعاء الـ LangGraph المباشر
                 result = workflow_app.invoke(initial_input)
-                
-                # استخراج الرد
                 assistant_response = result.get("response") or "عذراً، لم أتمكن من إيجاد رد مناسب حالياً."
-                
-                # عرض الرد
                 st.write(assistant_response)
-
-                # حفظ رد السكرتيرة في الـ session state
                 st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
             except Exception as e:

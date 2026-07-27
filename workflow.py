@@ -1,36 +1,33 @@
 import os
 from langgraph.graph import StateGraph, END
 
-# 1. Import configurations & state definition
-from config import settings
-from models import state
-
-# 2. Import agents from agents file
-from agents import rewriter_agent, response_agent
-
-
 # ==========================================
-# Enable LangSmith Tracing
+# Enable LangSmith Tracing Dynamically
 # ==========================================
-if getattr(settings, "langchain_api_key", None):
+# يفحص os.environ مباشرة بصرف النظر عن مصدر التعيين
+api_key = os.environ.get("LANGCHAIN_API_KEY")
+if api_key:
     os.environ["LANGCHAIN_TRACING_V2"] = "true"
-    os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-    os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key
-    os.environ["LANGCHAIN_PROJECT"] = getattr(settings, "langchain_project", "counseling-institute-assistant")
+    os.environ["LANGCHAIN_ENDPOINT"] = os.environ.get("LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com")
+    os.environ["LANGCHAIN_PROJECT"] = os.environ.get("LANGCHAIN_PROJECT", "counseling-institute-assistant")
+
+
+# 1. Import state and agents AFTER setting env variables
+from models import state
+from agents import rewriter_agent, response_agent
 
 
 # ==========================================
 # Build the LangGraph Workflow
 # ==========================================
 
-# Initialize graph with the State schema
 workflow = StateGraph(state)
 
-# Add Nodes (Only Rewriter & Responder)
+# Add Nodes
 workflow.add_node("rewrite_query", rewriter_agent)
 workflow.add_node("generate_response", response_agent)
 
-# Define Graph Edges (Direct Pipeline)
+# Define Edges
 workflow.set_entry_point("rewrite_query")
 workflow.add_edge("rewrite_query", "generate_response")
 workflow.add_edge("generate_response", END)
