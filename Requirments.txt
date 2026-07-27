@@ -1,8 +1,7 @@
 streamlit
-langchain
-langchain-core
-langchain-community
-langchain-groq
 langgraph
+langchain-groq
+langchain-core
 pydantic
+pydantic-settings
 python-dotenv
