@@ -13,10 +13,12 @@ from models import state
 llm_response = ChatGroq(
         model="llama-3.3-70b-versatile",
         api_key=settings.llm_api,
+        temperature= 0.2
         )
 llm_rewrite =  ChatGroq(
         model="llama-3.1-8b-instant",
         api_key=settings.llm_api,
+        temperature=0.2
         )
 
 from langchain_core.messages import SystemMessage, HumanMessage
