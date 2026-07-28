@@ -47,7 +47,7 @@ def rewriter_agent(state_data: state) -> dict:
     rewritten_query = response.content.strip()
 
     return {
-        "user_query": rewritten_query
+        "rewritten_query": rewritten_query
     }
 
 
@@ -59,7 +59,7 @@ def response_agent(state_data: state) -> dict:
     Extracts user_query, chat_history, and context/retrieved content from State,
     builds the secretary prompt via system_prompt_extend, and gets the final response.
     """
-    user_input = state_data.get("user_query", "")
+    user_input = state_data.get("rewritten_query", "")
     chat_history = state_data.get("chat_history", "")
     content = state_data.get("content", "")  # Retained context if passed via state
 
