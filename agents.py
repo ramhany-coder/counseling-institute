@@ -10,8 +10,12 @@ from prompt import (
 )
 from models import state
 # 2. Import your LLM model from your models module
-llm = ChatGroq(
+llm_response = ChatGroq(
         model="llama-3.3-70b-versatile",
+        api_key=settings.llm_api,
+        )
+llm_rewrite =  ChatGroq(
+        model="llama-3.1-8b-instant",
         api_key=settings.llm_api,
         )
 
@@ -41,7 +45,7 @@ def rewriter_agent(state_data: state) -> dict:
     ]
 
     # Invoke LLM
-    response = llm.invoke(messages)
+    response = llm_rewrite.invoke(messages)
     
     # Store rewritten query (or pass it downstream)
     rewritten_query = response.content.strip()
@@ -76,7 +80,7 @@ def response_agent(state_data: state) -> dict:
     ]
 
     # Invoke LLM
-    response = llm.invoke(messages)
+    response = llm_response.invoke(messages)
 
     return {
         "response": response.content,
