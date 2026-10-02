@@ -1,6 +1,6 @@
 streamlit
 langgraph
-langchain-groq
+langchain-openai
 langchain-core
 pydantic
 pydantic-settings

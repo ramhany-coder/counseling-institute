@@ -14,7 +14,7 @@ if api_key:
 
 # 1. Import state and agents AFTER setting env variables
 from models import state
-from agents import rewriter_agent, response_agent
+from agents import response_agent
 
 
 # ==========================================
@@ -22,7 +22,6 @@ from agents import rewriter_agent, response_agent
 # ==========================================
 class workflow:
     def __init__(self):
-        self.rewriter_agent = rewriter_agent
         self.response_agent = response_agent
 
     @property
@@ -31,12 +30,10 @@ class workflow:
         graph = StateGraph(state)
 
         # Add Nodes
-        graph.add_node("rewrite_query", self.rewriter_agent)
         graph.add_node("generate_response", self.response_agent)
 
         # Define Edges
-        graph.set_entry_point("rewrite_query")
-        graph.add_edge("rewrite_query", "generate_response")
+        graph.set_entry_point("generate_response")
         graph.add_edge("generate_response", END)
         return graph.compile()
     
